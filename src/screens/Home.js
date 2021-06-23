@@ -10,33 +10,37 @@ import {
 import {SearchBar, Icon, ListItem, Avatar} from 'react-native-elements';
 import {getContact} from '../services/serviceContact';
 import TouchableScale from 'react-native-touchable-scale';
-import { useIsFocused } from '@react-navigation/native';
-import { connect, useStore } from 'react-redux';
-import {action, actionsContact, setContact} from '../redux/actions'
-import { bindActionCreators } from 'redux';
+import {useIsFocused} from '@react-navigation/native';
+import {connect, useStore, useSelector, useDispatch} from 'react-redux';
+import {action, actionsContact, setContact} from '../redux/actions';
+import {bindActionCreators} from 'redux';
 
-const Home = (props) => {
-  const store = useStore()
-  const {navigation}=props
+const Home = props => {
+  const store = useStore();
+  const {navigation} = props;
   const [search, setSearch] = useState('');
-  const [contact, setContact] = useState([]);
+  // const [contact, setContact] = useState([]);
   const [data, setData] = useState([]);
   const [refreshing, setRefreshing] = useState(true);
+  const kontak = useSelector(state => state);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-     setRefreshing(true)
+      setRefreshing(true);
     });
 
     // Return the function to unsubscribe from the event so it gets removed on unmount
-   
+
     if (refreshing) {
       getContact()
         .then(response => {
           console.log(JSON.stringify(response.data, null, 2));
-          setContact(response.data.data);
-          setData(response.data.data);
-          actions.actionsContact(response.data.data)
+          // setContact(response.data.data);
+      
+          dispatch(actionsContact(response.data.data));
+          
           setRefreshing(false);
         })
         .catch(e => {
@@ -47,8 +51,10 @@ const Home = (props) => {
     }
     return unsubscribe;
   }, [refreshing]);
+
+  useEffect(()=>{setData(kontak.kontak)},[kontak])
   const searchFilterFunction = text => {
-    const newData = contact.filter(item => {
+    const newData = kontak.kontak.filter(item => {
       const itemData = `${item.firstName.toUpperCase()} ${item.lastName.toUpperCase()}`;
 
       const textData = text.toUpperCase();
@@ -71,7 +77,13 @@ const Home = (props) => {
         lightTheme={true}
         containerStyle={{backgroundColor: 'transparent', borderWidth: 0}}
       />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>setRefreshing(true)} />}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => setRefreshing(true)}
+          />
+        }>
         {data.map((l, i) => (
           <ListItem
             Component={TouchableScale}
@@ -84,15 +96,16 @@ const Home = (props) => {
             <Avatar rounded source={{uri: l.photo}} />
             <ListItem.Content>
               <ListItem.Title>
-                {l.firstName} {l.lastName} 
+                {l.firstName} {l.lastName}
               </ListItem.Title>
             </ListItem.Content>
           </ListItem>
         ))}
-        {/* {store?.contact.map((n,i)=>(<Text>{n.firstName}</Text>))} */}
+        {/* {kontak.kontak.map((n, i) => (
+          <Text>{n.firstName}</Text>
+        ))} */}
       </ScrollView>
-      
-     
+
       <TouchableScale
         style={styles.addButton}
         onPress={() => navigation.navigate('addContact')}>
@@ -152,4 +165,4 @@ const styles = StyleSheet.create({
   },
 });
 // export default connect(mapStateToProps, mapDispatchToProps)(Home)
-export default Home
+export default Home;

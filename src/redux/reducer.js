@@ -1,7 +1,7 @@
 import {GET_CONTACT} from './type';
 
 const initialState = {
-  contact: [],
+  kontak: [],
 };
 
 const contactReducer = (state = initialState, action) => {
@@ -9,7 +9,7 @@ const contactReducer = (state = initialState, action) => {
     case GET_CONTACT:
       return {
         ...state,
-       contact:action.payload,
+       kontak:action.payload,
       };
     default:
       return state;

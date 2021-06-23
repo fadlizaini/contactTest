@@ -1,10 +1,6 @@
-import {createStore, combineReducers} from 'redux';
-import contactReducer from './reducer';
-
-const rootReducer = combineReducers({contact: contactReducer});
-
-const configureStore = () => {
-  return createStore(rootReducer);
-};
-
-export default configureStore;
+import thunk from 'redux-thunk';
+import reducer from './reducer'
+import { createStore, applyMiddleware } from 'redux';
+export default function configureStore() {
+  return createStore(reducer, applyMiddleware(thunk));
+}

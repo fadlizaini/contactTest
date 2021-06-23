@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, ScrollView, StyleSheet, Alert, Text} from 'react-native';
+import {View, ScrollView, StyleSheet, Alert, Text, Image} from 'react-native';
 import {Avatar, Input, Icon} from 'react-native-elements';
 import TouchableScale from 'react-native-touchable-scale';
 import {saveContact} from '../services/serviceContact';
@@ -11,6 +11,7 @@ const AddContact = ({navigation}) => {
   const [age, setAge] = useState('');
 
   const [image, setImage] = useState({fileName: '', type: '', uri: ''});
+  const [photoUrl, setPhotoUrl] = useState('');
 
   const chooseImage = () => {
     let options = {
@@ -34,15 +35,13 @@ const AddContact = ({navigation}) => {
         console.log('User tapped custom button: ', response.customButton);
         alert(response.customButton);
       } else {
-        const source = {uri: response.uri};
-
         // You can also display the image using data:
         // const source = { uri: 'data:image/jpeg;base64,' + response.data };
         // alert(JSON.stringify(response));s
         console.log('response', JSON.stringify(response));
         setImage({
-         fileName: response.assets[0].fileName,
-           type: response.assets[0].type,
+          fileName: response.assets[0].fileName,
+          type: response.assets[0].type,
           uri: response.assets[0].uri,
         });
       }
@@ -67,39 +66,40 @@ const AddContact = ({navigation}) => {
         console.log('User tapped custom button: ', response.customButton);
         alert(response.customButton);
       } else {
-        const source = {uri: response.uri};
         console.log('response', JSON.stringify(response));
         setImage({
           fileName: response.assets[0].fileName,
           type: response.assets[0].type,
-         uri: response.assets[0].uri,
+          uri: response.assets[0].uri,
         });
       }
     });
   };
 
-  const handlePress = async() => {
+  const handlePress = async () => {
     const data = await new FormData();
     await data.append('photo', {
       name: image.fileName,
       type: image.type,
-      uri:image.uri})
-      console.log(data);
-    saveContact(first, last, age, data)
+      uri: image.uri,
+    });
+    console.log(data);
+    saveContact(first, last, age, photoUrl)
       .then(response => {
         console.log(response.data);
         navigation.goBack();
       })
       .catch(e => {
-        Alert.alert('Error');
-        console.log(e.response);
+        Alert.alert('Error', e.response.data.message);
+
+        console.log(JSON.stringify(e.response, null, 2));
       });
   };
   return (
     <>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{alignItems: 'center'}}>
-          {image.fileUri === '' ? (
+          {image.uri === '' ? (
             <Avatar
               onPress={() =>
                 Alert.alert('Pick', 'Wich image picker method', [
@@ -178,13 +178,28 @@ const AddContact = ({navigation}) => {
             containerStyle={style.input}
             onChangeText={text => setAge(text)}
             value={age}
+            maxLength={3}
             keyboardType="decimal-pad"
           />
+          <Input
+            label="Photo Url"
+            placeholder="input url..."
+            containerStyle={style.input}
+            onChangeText={text => setPhotoUrl(text)}
+            value={photoUrl}
+          />
+          {photoUrl !== '' && (
+            <Image
+              width={200}
+              height={200}
+              source={{
+                uri: photoUrl,
+              }}
+            />
+          )}
         </View>
       </ScrollView>
-      <TouchableScale
-        style={style.saveButton}
-        onPress={() => handlePress}>
+      <TouchableScale style={style.saveButton} onPress={() => handlePress()}>
         <Icon name="save-alt" color="white" />
       </TouchableScale>
     </>

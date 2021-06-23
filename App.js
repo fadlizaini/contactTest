@@ -15,11 +15,16 @@ import Navigation from './src/navigation/Navigation';
 import {SafeAreaView} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
+import {Provider} from 'react-redux';
+import store from './src/redux/store';
+const stores = store();
 const App = () => {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <Navigation />
+        <Provider store={stores}>
+          <Navigation />
+        </Provider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

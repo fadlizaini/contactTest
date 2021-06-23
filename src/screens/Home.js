@@ -1,25 +1,52 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import {SearchBar, Icon, ListItem, Avatar} from 'react-native-elements';
 import {getContact} from '../services/serviceContact';
 import TouchableScale from 'react-native-touchable-scale';
+import { useIsFocused } from '@react-navigation/native';
+import { connect, useStore } from 'react-redux';
+import {action, actionsContact, setContact} from '../redux/actions'
+import { bindActionCreators } from 'redux';
 
-const Home = ({navigation}) => {
+const Home = (props) => {
+  const store = useStore()
+  const {navigation}=props
   const [search, setSearch] = useState('');
   const [contact, setContact] = useState([]);
-  const [data, setData]=useState([]);
+  const [data, setData] = useState([]);
+  const [refreshing, setRefreshing] = useState(true);
 
   useEffect(() => {
-    getContact()
-      .then(response => {
-        console.log(JSON.stringify(response.data, null, 2));
-        setContact(response.data.data);
-        setData(response.data.data)
-      })
-      .catch(e => {
-        console.log(e);
-      });
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+     setRefreshing(true)
+    });
+
+    // Return the function to unsubscribe from the event so it gets removed on unmount
+   
+    if (refreshing) {
+      getContact()
+        .then(response => {
+          console.log(JSON.stringify(response.data, null, 2));
+          setContact(response.data.data);
+          setData(response.data.data);
+          actions.actionsContact(response.data.data)
+          setRefreshing(false);
+        })
+        .catch(e => {
+          console.log(e);
+          setRefreshing(false);
+          Alert.alert('Error', e.response.data.message);
+        });
+    }
+    return unsubscribe;
+  }, [refreshing]);
   const searchFilterFunction = text => {
     const newData = contact.filter(item => {
       const itemData = `${item.firstName.toUpperCase()} ${item.lastName.toUpperCase()}`;
@@ -29,76 +56,63 @@ const Home = ({navigation}) => {
       return itemData.indexOf(textData) > -1;
     });
 
-    setData(newData)
+    setData(newData);
   };
+
   return (
     <View style={styles.container}>
       <SearchBar
         placeholder="Search contact..."
         onChangeText={search => {
-          setSearch(search) ; searchFilterFunction(search);
+          setSearch(search);
+          searchFilterFunction(search);
         }}
         value={search}
         lightTheme={true}
         containerStyle={{backgroundColor: 'transparent', borderWidth: 0}}
       />
-      {data.map((l, i) => (
-        <ListItem
-          Component={TouchableScale}
-          friction={90}
-          tension={100}
-          activeScale={0.95}
-          key={i}
-          bottomDivider>
-          <Avatar rounded source={{uri: l.photo}} />
-          <ListItem.Content>
-            <ListItem.Title>
-              {l.firstName} {l.lastName}
-            </ListItem.Title>
-          </ListItem.Content>
-        </ListItem>
-      ))}
-      <TouchableScale style={styles.addButton} onPress={()=>navigation.navigate('addContact')}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>setRefreshing(true)} />}>
+        {data.map((l, i) => (
+          <ListItem
+            Component={TouchableScale}
+            friction={90}
+            tension={100}
+            activeScale={0.95}
+            key={i}
+            onPress={() => navigation.navigate('detailContact', {l})}
+            bottomDivider>
+            <Avatar rounded source={{uri: l.photo}} />
+            <ListItem.Content>
+              <ListItem.Title>
+                {l.firstName} {l.lastName} 
+              </ListItem.Title>
+            </ListItem.Content>
+          </ListItem>
+        ))}
+        {/* {store?.contact.map((n,i)=>(<Text>{n.firstName}</Text>))} */}
+      </ScrollView>
+      
+     
+      <TouchableScale
+        style={styles.addButton}
+        onPress={() => navigation.navigate('addContact')}>
         <Icon name="add" color="white" />
       </TouchableScale>
-
-      {/* <FlatList
-        onEndReached={() => {
-          addList(page + 1) ;setPage(page + 1);
-        }}
-        onEndReachedThreshold={0.5}
-        data={DATA}
-        renderItem={({item, index}) => (
-          <Movie
-            data={item}
-            index={index}
-            imagePress={handlePressImage}
-            navigation={props.navigation}
-          />
-        )}
-        keyExtractor={item => item.imdbID}
-      />
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(false);
-        }}>
-        <TouchableOpacity
-          style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}
-          onPress={() => setModalVisible(false)}>
-          <Image
-            style={{width: '80%', height: '80%'}}
-            source={{
-              uri: modalImage,
-            }}
-          />
-        </TouchableOpacity>
-      </Modal> */}
     </View>
   );
 };
+// const mapStateToProps = state => ({
+//   contact:state.contact
+// });
+
+// const ActionCreators = Object.assign(
+//   {},
+//   actionsContact,
+// );
+// const mapDispatchToProps = dispatch => ({
+//   actions: bindActionCreators(ActionCreators, dispatch),
+// });
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -137,4 +151,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
-export default Home;
+// export default connect(mapStateToProps, mapDispatchToProps)(Home)
+export default Home

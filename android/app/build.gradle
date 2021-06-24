@@ -152,6 +152,7 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }   
+        
         release {
             storeFile file('zaini.keystore')
             storePassword 'sekaret5'
